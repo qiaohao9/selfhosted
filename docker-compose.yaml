@@ -1,0 +1,80 @@
+version: "3"
+
+services:
+  homer: # port->8080
+    image: b4bz/homer:${HOMEER_TAG:-21.09.2}
+    container_name: homer
+    volumes:
+      - ${PWD}/homer_config.yml:/www/assets/config.yml:ro
+    env_file:
+      - common.env
+    networks:
+      - services_only
+    restart: unless-stopped
+
+  bookmarks: # port->9090
+    image: sissbruecker/linkding:${LINKDING_TAG:-1.8.4}
+    container_name: bookmarks
+    volumes:
+      - ${PWD}/volumes/linkding/data:/etc/linkding/data
+    env_file:
+      - common.env
+    networks:
+      - services_only
+    restart: unless-stopped
+
+  ttrss:  # port->80
+    image: wangqiru/ttrss:${TTRSS_TAG:-nightly-2021-11-11}
+    container_name: ttrss
+    volumes:
+      - ${PWD}/volumes/ttrss/feed-icons:/var/www/feed-icons/
+    environment:
+      - SELF_URL_PATH=${TTRSS_URL_PATH:-http://127.0.0.1:80}
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_NAME=ttrss
+      - DB_USER=ttrss
+      - DB_PASS=${TTRSS_DB_PASSWORD:-password}
+      - PUID=1000
+      - PGID=1000
+    env_file:
+      - common.env
+    networks:
+      - services_only
+    restart: unless-stopped
+    depends_on:
+      - postgresql
+
+  nginx:
+    image: nginx:${NGINX_TAG:-1.21-alpine}
+    container_name: nginx
+    volumes:
+      - ${PWD}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${PWD}/proxy.conf:/etc/nginx/proxy.conf:ro
+    ports:
+      - "80:80"
+    env_file:
+      - common.env
+    networks:
+      - services_only
+      - public_access
+    restart: unless-stopped
+
+  postgresql:
+    image: postgres:14.0-alpine3.14
+    container_name: postgresql
+    volumes:
+      - ${PWD}/postgres.sql:/docker-entrypoint-initdb.d/postgres.sql
+      - ${PWD}/volumes/postgresql/data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+    env_file:
+      - common.env
+    networks:
+      - services_only
+    restart: unless-stopped
+
+networks:
+  public_access:
+  services_only:
+    internal: true
