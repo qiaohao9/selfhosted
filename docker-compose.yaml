@@ -8,8 +8,6 @@ services:
       - ${PWD}/homer_config.yml:/www/assets/config.yml:ro
     env_file:
       - common.env
-    networks:
-      - services_only
     restart: unless-stopped
 
   bookmarks: # port->9090
@@ -19,8 +17,6 @@ services:
       - ${PWD}/volumes/linkding/data:/etc/linkding/data
     env_file:
       - common.env
-    networks:
-      - services_only
     restart: unless-stopped
 
   ttrss:  # port->80
@@ -39,8 +35,6 @@ services:
       - PGID=1000
     env_file:
       - common.env
-    networks:
-      - services_only
     restart: unless-stopped
     depends_on:
       - postgresql
@@ -55,9 +49,6 @@ services:
       - "80:80"
     env_file:
       - common.env
-    networks:
-      - services_only
-      - public_access
     restart: unless-stopped
 
   postgresql:
@@ -70,11 +61,4 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
     env_file:
       - common.env
-    networks:
-      - services_only
     restart: unless-stopped
-
-networks:
-  public_access:
-  services_only:
-    internal: true
